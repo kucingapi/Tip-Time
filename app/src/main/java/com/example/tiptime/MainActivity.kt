@@ -1,9 +1,14 @@
 package com.example.tiptime
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import com.example.tiptime.databinding.ActivityMainBinding
 import java.text.NumberFormat
+import kotlin.math.ceil
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding:ActivityMainBinding
@@ -12,15 +17,26 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.buttonCalculate.setOnClickListener{calculateTip()}
+        binding.costOfServiceText.setOnKeyListener { view, keyCode, _ -> handleKeyEvent(view, keyCode) }
     }
+    private fun handleKeyEvent(view:View, keyCode:Int) : Boolean{
+        if (keyCode == KeyEvent.KEYCODE_ENTER) {
+            // Hide the keyboard
+            val inputMethodManager =
+                getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
+            return true
+        }
+        return false
 
+    }
     private fun calculateTip(){
-        val stringInTextField = binding.costOfService.text.toString()
-        val cost = stringInTextField.toDouble()
-        if (cost == null) {
+        if (binding.costOfService.editText == null) {
             binding.textTipAmount.text = ""
             return
         }
+        val stringInTextField = binding.costOfService.editText?.text.toString()
+        val cost = stringInTextField.toDouble()
         val selectedId = binding.radioGroupRating.checkedRadioButtonId
         val tipPercentage = when(selectedId){
             R.id.option_twenty_percent -> 0.20
@@ -31,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         var tip = cost * tipPercentage
         val roundUp = binding.switchRound.isChecked
         if(roundUp){
-            tip = kotlin.math.ceil(tip)
+            tip = ceil(tip)
         }
         val formattedTip = NumberFormat.getCurrencyInstance().format(tip)
         binding.textTipAmount.text = getString(R.string.tip_amount, formattedTip)
